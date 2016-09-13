@@ -1,0 +1,29 @@
+#error {
+    color: #d00;
+    font-weight: bold;
+}
+
+.remove-node {
+    display: inline-block;
+    padding: 5px;
+}
+
+input,
+label {
+    vertical-align: middle;
+    display: inline-block;
+}
+
+label {
+    min-width: 20px;
+    margin-right: 5px;
+}
+
+fieldset {
+    margin: 10px 0;
+    max-width: 300px;
+}
+
+.input-list {
+    margin-top: 5px;
+}
