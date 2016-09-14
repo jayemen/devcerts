@@ -62,7 +62,7 @@ func certReqHandler(s certutil.Store, w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Content-Type", "application/zip")
 	w.Header().Add("Content-Disposition", "attachment; filename=cert.zip")
 	w.WriteHeader(200)
-	err = zipContents(cert, w)
+	err = zipStore(cert, w)
 	if err != nil {
 		log.Printf("Error: %v", err)
 	}
@@ -82,7 +82,7 @@ func createCa() (certutil.Store, error) {
 	return certutil.Load(cert, key)
 }
 
-func zipContents(cert certutil.Store, w io.Writer) error {
+func zipStore(cert certutil.Store, w io.Writer) error {
 	zipper := zip.NewWriter(w)
 	file, err := zipper.Create("cert.crt")
 	if err != nil {

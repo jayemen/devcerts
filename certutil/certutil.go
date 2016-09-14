@@ -17,21 +17,22 @@ import (
 
 // Store holds an x509 certificate, its corresponding private key, and all certs in its trust chain.
 type Store struct {
-	key   interface{}
-	cert  *x509.Certificate
-	chain []*x509.Certificate // Index 0 is the root of the trust chain.
+	Key  interface{}
+	Cert *x509.Certificate
+	// Index 0 is the root of the trust chain.
+	Chain []*x509.Certificate
 }
 
 // WriteCert writes the PEM-encoded ASN.1 DER representation of the certificate.
 func (s Store) WriteCert(w io.Writer) error {
-	return writePem(w, s.cert.Raw, "CERTIFICATE")
+	return writePem(w, s.Cert.Raw, "CERTIFICATE")
 }
 
 // WriteIntermediates writes the PEM-encoded ASN.1 DER representation of all of the intermediate certs in the chain of trust.
 // This is a no-op if there are no intermediate certificates.
 func (s Store) WriteIntermediates(w io.Writer) error {
-	for i := len(s.chain) - 1; i >= 1; i-- {
-		err := writePem(w, s.chain[i].Raw, "CERTIFICATE")
+	for i := len(s.Chain) - 1; i >= 1; i-- {
+		err := writePem(w, s.Chain[i].Raw, "CERTIFICATE")
 		if err != nil {
 			return err
 		}
@@ -43,16 +44,16 @@ func (s Store) WriteIntermediates(w io.Writer) error {
 // WriteRoot writes the PEM-encoded ASN.1 DER representation of the root certificate in the chain of trust.
 // This is a no-op if this is a self-signed certificate.
 func (s Store) WriteRoot(w io.Writer) error {
-	if len(s.chain) == 0 {
+	if len(s.Chain) == 0 {
 		return nil
 	}
 
-	return writePem(w, s.chain[0].Raw, "CERTIFICATE")
+	return writePem(w, s.Chain[0].Raw, "CERTIFICATE")
 }
 
 // WriteKey writes the PEM-encoded ASN.1 DER representation of the private key.
 func (s Store) WriteKey(w io.Writer) error {
-	switch key := s.key.(type) {
+	switch key := s.Key.(type) {
 	case *rsa.PrivateKey:
 		return writePem(w, x509.MarshalPKCS1PrivateKey(key), "RSA PRIVATE KEY")
 
@@ -66,7 +67,7 @@ func (s Store) WriteKey(w io.Writer) error {
 		return writePem(w, buf, "EC PRIVATE KEY")
 	}
 
-	return fmt.Errorf("Unknown private key type %v", s.key)
+	return fmt.Errorf("Unknown private key type %v", s.Key)
 }
 
 // Load creates a certificate from a PEM-encoded certificate and private key.
@@ -115,9 +116,9 @@ func Load(certPem []byte, keyPem []byte) (Store, error) {
 	}
 
 	result := Store{
-		key:   key,
-		cert:  cert,
-		chain: nil,
+		Key:   key,
+		Cert:  cert,
+		Chain: nil,
 	}
 
 	return result, nil
@@ -161,7 +162,7 @@ func (s Store) New(commonName string, dnsNames []string, ipAddresses []string) (
 		NotBefore:   now,
 	}
 
-	certBytes, err := x509.CreateCertificate(rand.Reader, &template, s.cert, key.Public(), s.key)
+	certBytes, err := x509.CreateCertificate(rand.Reader, &template, s.Cert, key.Public(), s.Key)
 	if err != nil {
 		return Store{}, err
 	}
@@ -172,9 +173,9 @@ func (s Store) New(commonName string, dnsNames []string, ipAddresses []string) (
 		return Store{}, err
 	}
 
-	chain := make([]*x509.Certificate, len(s.chain)+1)
-	copy(chain, s.chain)
-	chain[len(chain)-1] = s.cert
+	chain := make([]*x509.Certificate, len(s.Chain)+1)
+	copy(chain, s.Chain)
+	chain[len(chain)-1] = s.Cert
 
 	result := Store{
 		key,

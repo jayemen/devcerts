@@ -1,8 +1,9 @@
 package certutil
 
 import "testing"
+import "crypto/x509"
 
-const caCertPem = `-----BEGIN CERTIFICATE-----
+const certPem = `-----BEGIN CERTIFICATE-----
 MIIDnTCCAoWgAwIBAgIBATANBgkqhkiG9w0BAQsFADBoMQswCQYDVQQGEwJDQTEQ
 MA4GA1UECAwHT250YXJpbzERMA8GA1UEBwwIS2luZ3N0b24xETAPBgNVBAoMCGpt
 bi5saW5rMQswCQYDVQQLDAJJVDEUMBIGA1UEAwwLam1uLmxpbmsgQ0EwIBcNMTYw
@@ -25,7 +26,7 @@ TlyeSg9H7wrc1mKOwjmRrgVpcUMfqx88//qSExweeY/DQ6RKGoqFHc5bjeWlw2EB
 6P24jUaeXaZiVEChVz0npTw=
 -----END CERTIFICATE-----`
 
-const caKeyPem = `-----BEGIN PRIVATE KEY-----
+const keyPem = `-----BEGIN PRIVATE KEY-----
 MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQDkR4sHmISQyCz8
 dUEns0hfdqz3WA5NDPM0rjpwKQAVBS4ub9AryrkST6tA0OQtVmmQFDRFvlPVrG4Y
 ak5yJCgxEIrqdLyRJYUV4TfTkt+4LE23M5BUnhSplHJ0IW6Z/+WXpOwUxmxFuBs2
@@ -90,17 +91,53 @@ func (t *wrapper) nilErr(err error) bool {
 func TestLoad(testing *testing.T) {
 	t := wrap(testing)
 
-	store, err := Load([]byte(caCertPem), []byte(caKeyPem))
+	store, err := Load([]byte(certPem), []byte(keyPem))
 
 	if !t.nilErr(err) {
 		return
 	}
 
-	t.test(len(store.chain) == 0, "the chain should be empty")
-	t.eq("jmn.link CA", store.cert.Subject.CommonName)
-	t.eq("CA", store.cert.Subject.Country[0])
-	t.eq("Ontario", store.cert.Subject.Province[0])
-	t.eq("Kingston", store.cert.Subject.Locality[0])
-	t.eq("IT", store.cert.Subject.OrganizationalUnit[0])
-	t.eq("jmn.link", store.cert.Subject.Organization[0])
+	t.test(len(store.Chain) == 0, "the chain should be empty")
+	t.eq("jmn.link CA", store.Cert.Subject.CommonName)
+	t.eq("CA", store.Cert.Subject.Country[0])
+	t.eq("Ontario", store.Cert.Subject.Province[0])
+	t.eq("Kingston", store.Cert.Subject.Locality[0])
+	t.eq("IT", store.Cert.Subject.OrganizationalUnit[0])
+	t.eq("jmn.link", store.Cert.Subject.Organization[0])
+}
+
+func TestNew(testing *testing.T) {
+	t := wrap(testing)
+
+	store, err := Load([]byte(certPem), []byte(keyPem))
+
+	if !t.nilErr(err) {
+		return
+	}
+
+	child, err := store.New("test.com", []string{"a.b.c.com"}, []string{"1.2.3.4"})
+
+	if !t.nilErr(err) {
+		return
+	}
+
+	intermediates := x509.NewCertPool()
+	roots := x509.NewCertPool()
+
+	for i, c := range child.Chain {
+		if i != 0 {
+			intermediates.AddCert(c)
+		} else {
+			roots.AddCert(c)
+		}
+	}
+
+	_, err = child.Cert.Verify(x509.VerifyOptions{
+		Intermediates: intermediates,
+		Roots:         roots,
+	})
+
+	if !t.nilErr(err) {
+		return
+	}
 }
