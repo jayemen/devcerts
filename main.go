@@ -5,7 +5,6 @@ package main
 import (
 	"archive/zip"
 	"encoding/json"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
@@ -150,6 +149,6 @@ func main() {
 		port = "80"
 	}
 
-	fmt.Printf("Listening on port %s\n", port)
+	log.Printf("Listening on port %s\n", port)
 	log.Fatal(http.ListenAndServe("127.0.0.1:"+port, r))
 }
