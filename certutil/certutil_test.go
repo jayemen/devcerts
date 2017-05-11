@@ -71,9 +71,9 @@ func (t *wrapper) test(condition bool, msg string) bool {
 	return condition
 }
 
-func (t *wrapper) eq(a interface{}, b interface{}) bool {
-	if a != b {
-		t.Errorf("expected %+v got %+v", a, b)
+func (t *wrapper) eq(want interface{}, got interface{}) bool {
+	if want != got {
+		t.Errorf("expected '%+v' got '%+v'", want, got)
 		return false
 	}
 
@@ -86,6 +86,19 @@ func (t *wrapper) nilErr(err error) bool {
 	}
 
 	return err == nil
+}
+
+func (t *wrapper) sliceEq(want []string, got []string) bool {
+	if !t.eq(len(want), len(got)) {
+		return false
+	}
+
+	eq := true
+	for i := range want {
+		eq = !t.eq(want[i], got[i]) && eq
+	}
+
+	return eq
 }
 
 func TestLoad(testing *testing.T) {
@@ -120,6 +133,16 @@ func TestNew(testing *testing.T) {
 	if !t.nilErr(err) {
 		return
 	}
+
+	t.eq("test.com", child.Cert.Subject.CommonName)
+	t.sliceEq([]string{"CA"}, child.Cert.Subject.Country)
+	t.sliceEq([]string{"Ontario"}, child.Cert.Subject.Province)
+	t.sliceEq([]string{"Kingston"}, child.Cert.Subject.Locality)
+	t.sliceEq([]string{"IT"}, child.Cert.Subject.OrganizationalUnit)
+	t.sliceEq([]string{"jmn.link"}, child.Cert.Subject.Organization)
+	t.sliceEq([]string{"a.b.c.com"}, child.Cert.DNSNames)
+	t.eq("1.2.3.4", child.Cert.IPAddresses[0].String())
+	t.eq(1, len(child.Cert.IPAddresses))
 
 	intermediates := x509.NewCertPool()
 	roots := x509.NewCertPool()
