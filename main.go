@@ -1,4 +1,4 @@
-//go:generate go run assets/assets_generate.go
+//go:generate go run -tags=dev assets/assets_generate.go
 
 package main
 

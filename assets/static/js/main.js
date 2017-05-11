@@ -56,16 +56,24 @@
     $('#generate').on('click', () => {
         error();
 
-        const data = {
-            commonName: $('#common-name').prop('value'),
-            names: $('#host-names-list .value-input').toArray().map(e => e.value).filter(id),
-            ips: $('#ips-list .value-input').toArray().map(e => e.value).filter(id)
-        };
+        const data = {};
 
-        if (!data.commonName) {
-            error("Enter a common name");
+        data.names = $('#host-names-list .value-input')
+            .toArray()
+            .map(e => e.value)
+            .filter(id);
+
+        if (!data.names.length) {
+            error("Enter at least one name");
             return;
         }
+
+        data.commonName = data.names[0];
+
+        data.ips = $('#ips-list .value-input')
+            .toArray()
+            .map(e => e.value)
+            .filter(id);
 
         const input = $('<input>')
             .attr('type', 'hidden')

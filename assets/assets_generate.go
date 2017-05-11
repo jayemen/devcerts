@@ -5,7 +5,7 @@ package main
 import (
 	"log"
 
-	"github.com/jayemen/devcertsrv/assets"
+	"github.com/jayemen/devcerts/assets"
 	"github.com/shurcooL/vfsgen"
 )
 
